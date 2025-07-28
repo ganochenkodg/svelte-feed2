@@ -35,13 +35,12 @@ fastify.post('/posts', async (req, reply) => {
 
 fastify.put('/posts/:id', async (req, reply) => {
   const { id } = req.params;
-  const { content, color, files } = req.body;
+  const { content } = req.body;
 
-  const filesJson = JSON.stringify(files || []);
-  const result = await db.run(
-    'UPDATE posts SET content = ?, color = ?, files = ? WHERE id = ?',
-    [content, color, filesJson, id]
-  );
+  const result = await db.run('UPDATE posts SET content = ? WHERE id = ?', [
+    content,
+    id,
+  ]);
 
   if (result.changes === 0) {
     return reply.status(404).send({ error: 'Post not found' });
