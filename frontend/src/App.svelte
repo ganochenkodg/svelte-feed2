@@ -1,42 +1,26 @@
 <script>
   import { onMount } from 'svelte';
+  const backendEndpoint = 'http://localhost:3000'
 
   const themes = [
-    'abyss',
-    'acid',
-    'aqua',
     'autumn',
-    'black',
     'bumblebee',
     'business',
     'caramellatte',
     'cmyk',
     'coffee',
     'corporate',
-    'cupcake',
-    'cyberpunk',
     'dark',
     'dim',
     'dracula',
-    'emerald',
     'fantasy',
     'forest',
     'garden',
-    'halloween',
-    'lemonade',
     'light',
-    'lofi',
-    'luxury',
-    'night',
     'nord',
-    'pastel',
     'retro',
-    'silk',
     'sunset',
-    'synthwave',
-    'valentine',
-    'winter',
-    'wireframe'
+    'valentine'
   ];
 
   let selectedTheme = 'autumn';
@@ -58,7 +42,16 @@
     warning: true
   };
 
-  onMount(fetchPosts);
+  onMount(() => {
+    const cookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('theme='));
+
+    if (cookie) {
+      selectedTheme = cookie.split('=')[1];
+    }
+    fetchPosts();
+  });
 
   $: {
     document.documentElement.setAttribute('data-theme', selectedTheme);
@@ -83,9 +76,8 @@
 
   async function submitPost() {
     if (!content.trim()) return;
-
     try {
-      const response = await fetch('http://localhost:3000/posts', {
+      const response = await fetch(`${backendEndpoint}/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content, color: selectedColor, files })
@@ -96,39 +88,39 @@
         selectedColor = 'primary';
         fetchPosts();
       } else {
-        console.error('Ошибка при отправке поста:', await response.text());
+        console.error('Error:', await response.text());
       }
     } catch (err) {
-      console.error('Ошибка сети:', err);
+      console.error('Network error:', err);
     }
   }
 
   async function fetchPosts() {
     try {
-      const response = await fetch('http://localhost:3000/posts');
+      const response = await fetch(`${backendEndpoint}/posts`);
       if (response.ok) {
         fullPosts = await response.json();
       } else {
-        console.error('Ошибка при получении постов:', await response.text());
+        console.error('Error:', await response.text());
       }
     } catch (err) {
-      console.error('Ошибка сети:', err);
+      console.error('Network error:', err);
     }
   }
 
   async function deletePost(id) {
     try {
-      const response = await fetch(`http://localhost:3000/posts/${id}`, {
+      const response = await fetch(`${backendEndpoint}/posts/${id}`, {
         method: 'DELETE'
       });
 
       if (response.ok) {
         posts = posts.filter(post => post.id !== id);
       } else {
-        console.error('Ошибка при удалении:', await response.text());
+        console.error('Error:', await response.text());
       }
     } catch (err) {
-      console.error('Ошибка сети:', err);
+      console.error('Network error:', err);
     }
   }
 
@@ -145,7 +137,7 @@
 
   async function updatePost(post) {
     try {
-      const response = await fetch(`http://localhost:3000/posts/${post.id}`, {
+      const response = await fetch(`${backendEndpoint}/posts/${post.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -158,13 +150,12 @@
       if (response.ok) {
         fetchPosts();
       } else {
-        console.error('Ошибка при обновлении поста:', await response.text());
+        console.error('Error:', await response.text());
       }
     } catch (err) {
-      console.error('Ошибка сети:', err);
+      console.error('Network error:', err);
     }
   }
-
 
   const colors = ['primary', 'secondary', 'accent', 'info', 'success', 'warning'];
 </script>
@@ -192,7 +183,12 @@
       </button>
     </div>
     <div>
-      <select class="select select-sm select-bordered" bind:value={selectedTheme}>
+      <select class="select select-sm select-bordered" 
+        bind:value={selectedTheme}
+        on:change={() => {
+          document.cookie = `theme=${selectedTheme}; path=/; max-age=31536000`;
+        }}
+        >
         {#each themes as theme}
           <option value={theme}>{theme}</option>
         {/each}
