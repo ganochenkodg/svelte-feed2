@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { initDB } from './db.js';
 import gracefulShutdown from 'fastify-graceful-shutdown';
+import getMetaData from 'metadata-scraper';
 
 const fastify = Fastify({ logger: true });
 await fastify.register(cors, {
@@ -58,6 +59,18 @@ fastify.delete('/posts/:id', async (req, reply) => {
   }
 
   reply.send({ success: true });
+});
+
+fastify.post('/metadata', async (req, reply) => {
+  const url = req.body.url;
+  if (!url) return reply.status(400).send({ error: 'URL is required' });
+  const metadata = await getMetaData(url);
+
+  reply.send({
+    title: metadata.title,
+    image: metadata.image,
+    url: metadata.url || url,
+  });
 });
 
 fastify.listen({ port: 3000, host: '0.0.0.0' });

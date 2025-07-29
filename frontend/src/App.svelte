@@ -32,6 +32,7 @@
   let fullPosts = [];
   let editId = null;
   let editContent = '';
+  let previews = {};
 
   let colorFilters = {
     primary: true,
@@ -41,6 +42,7 @@
     success: true,
     warning: true
   };
+  const colors = ['primary', 'secondary', 'accent', 'info', 'success', 'warning'];
 
   onMount(() => {
     const cookie = document.cookie
@@ -63,10 +65,10 @@
     var replacedText, replacePattern1, replacePattern2, replacePattern3;
 
     replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
-    replacedText = post.post.content.replace(replacePattern1, '<a class="link link-info" href="$1" target="_blank">$1</a>');
+    replacedText = post.content.replace(replacePattern1, '<a class="link link-info" href="$1" target="_blank">$1</a>');
 
     replacePattern2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
-    replacedText = replacedText.replace(replacePattern2, '$1<a class="link link-info" href="http://$2" target="_blank">$2</a>');
+    replacedText = replacedText.replace(replacePattern2, '$1<a class="link link-info" href="https://$2" target="_blank">$2</a>');
 
     replacePattern3 = /(([a-zA-Z0-9\-\_\.])+@[a-zA-Z\_]+?(\.[a-zA-Z]{2,6})+)/gim;
     replacedText = replacedText.replace(replacePattern3, '<a class="link link-info" href="mailto:$1">$1</a>');
@@ -149,6 +151,7 @@
 
       if (response.ok) {
         fetchPosts();
+        previews[post.id] = undefined;
       } else {
         console.error('Error:', await response.text());
       }
@@ -157,7 +160,35 @@
     }
   }
 
-  const colors = ['primary', 'secondary', 'accent', 'info', 'success', 'warning'];
+  function hasUrl(post) {
+    let result = linkify(post).includes('href=');
+    if (result) {
+      loadPreview(post);
+    }
+    return result;
+  }
+
+  async function loadPreview(post) {
+    const body = linkify(post);
+    const url = body.substring(body.indexOf('href=') + 6, body.indexOf('target=') - 2);
+    try {
+      const response = await fetch(`${backendEndpoint}/metadata`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({url: url })
+      });
+
+      if (response.ok) {
+        let metadata = await response.json();
+        previews[post.id] = {...metadata};
+      } else {
+        console.error('Error:', await response.text());
+      }
+    } catch (err) {
+      console.error('Network error:', err);
+    }
+  }
+
 </script>
 
 <div class="min-h-screen background">
@@ -202,6 +233,7 @@
     text-primary-content text-secondary-content text-accent-content text-info-content text-success-content text-warning-content
     btn-primary btn-secondary btn-accent btn-info btn-success btn-warning
     radio-primary radio-secondary radio-accent radio-info radio-success radio-warning
+    checkbox-primary checkbox-secondary checkbox-accent checkbox-info checkbox-success checkbox-warning
   </div>
 
   <div class="w-full max-w-3xl mx-auto px-2 mt-[3.5rem]">
@@ -278,8 +310,34 @@
           ></textarea>
           {:else}
           <div class="whitespace-pre-wrap break-words p-2">
-            {@html linkify({post})}
+            {@html linkify(post)}
           </div>
+    {#if hasUrl(post)}
+
+        {#if previews[post.id]?.image}
+          <div class={`card rounded overflow-hidden bg-base-100 border border-${post.color} mt-2`}>
+    <a
+      href={previews[post.id].url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <img
+        src={previews[post.id].image}
+        alt="preview"
+        class="w-full object-cover"
+        style="max-height: 150px"
+      />
+    </a>
+            <div class="p-2 text-sm">
+              <a href={previews[post.id].url} target="_blank" rel="noopener noreferrer" class="link link-info">
+                {previews[post.id].title}
+              </a>
+            </div>
+          </div>
+        {/if}
+    {/if}
+
+
           {/if}
         </div>
       </div>
