@@ -312,32 +312,30 @@
           <div class="whitespace-pre-wrap break-words p-2">
             {@html linkify(post)}
           </div>
-    {#if hasUrl(post)}
-
-        {#if previews[post.id]?.image}
-          <div class={`card rounded overflow-hidden bg-base-100 border border-${post.color} mt-2`}>
-    <a
-      href={previews[post.id].url}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <img
-        src={previews[post.id].image}
-        alt="preview"
-        class="w-full object-cover"
-        style="max-height: 150px"
-      />
-    </a>
-            <div class="p-2 text-sm">
-              <a href={previews[post.id].url} target="_blank" rel="noopener noreferrer" class="link link-info">
-                {previews[post.id].title}
-              </a>
-            </div>
-          </div>
-        {/if}
-    {/if}
-
-
+          {#if hasUrl(post)}
+            {#if previews[post.id]?.image}
+              <div class={`card rounded overflow-hidden bg-base-100 border border-${post.color} mt-2`}>
+                <a href={previews[post.id].url} target="_blank" rel="noopener noreferrer">
+                  <img 
+                    src={previews[post.id].image} 
+                    alt="preview" 
+                    class="w-full object-cover" 
+                    style={`max-height: 150px`}
+                  />
+                </a>
+                <div class="p-2 text-sm">
+                  <a 
+                    href={previews[post.id].url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="link link-info"
+                  >
+                    {previews[post.id].title}
+                  </a>
+                </div>
+              </div>
+            {/if}
+          {/if}
           {/if}
         </div>
       </div>
